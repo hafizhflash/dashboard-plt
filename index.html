@@ -476,26 +476,26 @@
 
         async function loadData() {
             try {
-                // Simulasi data untuk demo
-                const demoData = {
-                    totalHutang: 5250000,
-                    bulanIni: 850000,
-                    totalTransaksi: 15,
-                    cicilanAktif: 4,
+                // Set semua ke 0 dulu
+                const emptyData = {
+                    totalHutang: 0,
+                    bulanIni: 0,
+                    totalTransaksi: 0,
+                    cicilanAktif: 0,
                     perIndividu: {
-                        'Saya': 1500000,
-                        'Mama': 1800000,
-                        'Kak Iya': 950000,
-                        'Kiki': 1000000
+                        'Saya': 0,
+                        'Mama': 0,
+                        'Kak Iya': 0,
+                        'Kiki': 0
                     },
                     perPlatform: {
-                        'Shopee': 3200000,
-                        'Tokopedia': 1500000,
-                        'Lazada': 550000
+                        'Shopee': 0,
+                        'Tokopedia': 0,
+                        'Lazada': 0
                     }
                 };
 
-                updateDashboard(demoData);
+                updateDashboard(emptyData);
             } catch (error) {
                 console.error('Error loading data:', error);
             }
