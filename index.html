@@ -443,7 +443,7 @@
 
     <script>
         // GANTI URL INI dengan URL Web App dari Google Apps Script Anda
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUQ_7bnjOH0s3BdmR_Vi6wMJfIkQ3suT3bkONwF78hJWS2PC1zOtAotAUtYcAbUJRW/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUQ_7bnjOH0s3BdmR_Vi6wMJHkQ3auT3bkONwF78hJWS2PC1zOiAotAUrYcAbUJRW/exec';
 
         const form = document.getElementById('hutangForm');
         const alert = document.getElementById('alert');
@@ -530,20 +530,24 @@
                 platform: document.getElementById('platform').value
             };
 
+            console.log('Mengirim data:', formData);
             setLoading(true);
 
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+                // Kirim menggunakan fetch dengan redirect
+                const url = SCRIPT_URL + '?' + new URLSearchParams(formData).toString();
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
                 });
 
+                console.log('Response status:', response.status);
+                
                 showAlert('✅ Data berhasil disimpan ke Google Sheets!', 'success');
-                form.reset();
+                
+                // Reset form
+                document.getElementById('hutangForm').reset();
                 document.getElementById('tanggal').valueAsDate = new Date();
                 document.getElementById('bulan').value = bulanSekarang.charAt(0).toUpperCase() + bulanSekarang.slice(1);
                 
