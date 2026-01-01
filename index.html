@@ -351,6 +351,86 @@
             background: #c0392b;
         }
 
+        .edit-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .edit-btn:hover {
+            background: #2980b9;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             .transaction-table {
                 font-size: 12px;
@@ -461,7 +541,12 @@
 
                     <div class="form-group">
                         <label for="cicilan">Cicilan? *</label>
-                        <input type="text" id="cicilan" placeholder="Contoh: 3/6 atau 1x" required>
+                        <input type="text" id="cicilan" placeholder="Contoh: 2/6 atau 1x" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="autoCicilan" checked>
+                        <label for="autoCicilan">🔄 Buat cicilan bulan berikutnya otomatis</label>
                     </div>
 
                     <div class="form-group">
@@ -548,6 +633,36 @@
                         🔄 Refresh Data
                     </button>
                 </div>
+
+                <div class="breakdown" style="margin-top: 20px;">
+                    <h2 class="section-title">📋 Status Pelunasan</h2>
+                    
+                    <div class="form-group">
+                        <label for="checkBulan">Pilih Bulan:</label>
+                        <select id="checkBulan" class="filter-select" onchange="checkStatusLunas()">
+                            <option value="Januari">Januari</option>
+                            <option value="Februari">Februari</option>
+                            <option value="Maret">Maret</option>
+                            <option value="April">April</option>
+                            <option value="Mei">Mei</option>
+                            <option value="Juni">Juni</option>
+                            <option value="Juli">Juli</option>
+                            <option value="Agustus">Agustus</option>
+                            <option value="September">September</option>
+                            <option value="Oktober">Oktober</option>
+                            <option value="November">November</option>
+                            <option value="Desember">Desember</option>
+                        </select>
+                    </div>
+
+                    <div id="statusLunasInfo" style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
+                        <p style="margin: 0; color: #666;">Pilih bulan untuk cek status pelunasan</p>
+                    </div>
+
+                    <button id="lunasBtn" class="refresh-btn" onclick="markAsLunas()" style="display: none; background: #27ae60;">
+                        ✅ Tandai Sudah Lunas
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -617,6 +732,78 @@
         </div>
     </div>
 
+    <!-- Modal Edit -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="section-title">✏️ Edit Transaksi</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                
+                <div class="form-group">
+                    <label for="editBulan">Bulan *</label>
+                    <select id="editBulan" required>
+                        <option value="Januari">Januari</option>
+                        <option value="Februari">Februari</option>
+                        <option value="Maret">Maret</option>
+                        <option value="April">April</option>
+                        <option value="Mei">Mei</option>
+                        <option value="Juni">Juni</option>
+                        <option value="Juli">Juli</option>
+                        <option value="Agustus">Agustus</option>
+                        <option value="September">September</option>
+                        <option value="Oktober">Oktober</option>
+                        <option value="November">November</option>
+                        <option value="Desember">Desember</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTanggal">Tanggal *</label>
+                    <input type="date" id="editTanggal" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editKeterangan">Keterangan / Item *</label>
+                    <input type="text" id="editKeterangan" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPemilik">Pemilik Hutang *</label>
+                    <select id="editPemilik" required>
+                        <option value="Saya">Saya</option>
+                        <option value="Mama">Mama</option>
+                        <option value="Kak Iya">Kak Iya</option>
+                        <option value="Kiki">Kiki</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editBiaya">Biaya (Rp) *</label>
+                    <input type="number" id="editBiaya" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editCicilan">Cicilan *</label>
+                    <input type="text" id="editCicilan" placeholder="Contoh: 3/6 atau 1x" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPlatform">Platform *</label>
+                    <select id="editPlatform" required>
+                        <option value="Spaylater">Spaylater</option>
+                        <option value="Gopay Later">Gopay Later</option>
+                        <option value="Dana Cicil">Dana Cicil</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn">💾 Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -673,7 +860,7 @@
                 const data = {
                     totalHutang: 0,
                     bulanIni: 0,
-                    totalTransaksi: snapshot.size,
+                    totalTransaksi: 0,
                     cicilanAktif: 0,
                     perIndividu: {
                         'Saya': 0,
@@ -690,32 +877,47 @@
 
                 const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long' });
                 const bulanCapital = bulanSekarang.charAt(0).toUpperCase() + bulanSekarang.slice(1);
+                
+                // Set bulan di status lunas dropdown
+                document.getElementById('checkBulan').value = bulanCapital;
 
                 snapshot.forEach((doc) => {
                     const hutang = doc.data();
                     const biaya = parseInt(hutang.biaya) || 0;
+                    const isLunas = hutang.lunas === true;
                     
-                    data.totalHutang += biaya;
+                    // Hitung total transaksi (semua termasuk yang lunas)
+                    data.totalTransaksi++;
                     
-                    if (hutang.bulan === bulanCapital) {
+                    // Hitung hanya yang belum lunas untuk total hutang
+                    if (!isLunas) {
+                        data.totalHutang += biaya;
+                    }
+                    
+                    // Bulan ini - hanya yang belum lunas
+                    if (hutang.bulan === bulanCapital && !isLunas) {
                         data.bulanIni += biaya;
+                        
+                        // Per individu - hanya bulan ini dan belum lunas
+                        if (data.perIndividu.hasOwnProperty(hutang.pemilik)) {
+                            data.perIndividu[hutang.pemilik] += biaya;
+                        }
+                        
+                        // Per platform - hanya bulan ini dan belum lunas
+                        if (data.perPlatform.hasOwnProperty(hutang.platform)) {
+                            data.perPlatform[hutang.platform] += biaya;
+                        }
                     }
                     
-                    if (hutang.cicilan && hutang.cicilan !== '1x') {
+                    // Cicilan aktif - hanya yang belum lunas
+                    if (hutang.cicilan && hutang.cicilan !== '1x' && !isLunas) {
                         data.cicilanAktif++;
-                    }
-                    
-                    if (data.perIndividu.hasOwnProperty(hutang.pemilik)) {
-                        data.perIndividu[hutang.pemilik] += biaya;
-                    }
-                    
-                    if (data.perPlatform.hasOwnProperty(hutang.platform)) {
-                        data.perPlatform[hutang.platform] += biaya;
                     }
                 });
 
                 updateDashboard(data);
                 loadRiwayat();
+                checkStatusLunas();
             } catch (error) {
                 console.error('Error loading data:', error);
                 showAlert('❌ Gagal memuat data: ' + error.message, 'error');
@@ -763,17 +965,22 @@
                 const platformClass = 
                     t.platform === 'Spaylater' ? 'badge-spaylater' :
                     t.platform === 'Gopay Later' ? 'badge-gopay' : 'badge-dana';
+                
+                const lunasTag = t.lunas ? '<span style="color: #27ae60; font-weight: bold;"> ✅ LUNAS</span>' : '';
 
                 return `
-                    <tr>
+                    <tr style="${t.lunas ? 'opacity: 0.6;' : ''}">
                         <td>${t.tanggal}</td>
-                        <td>${t.bulan}</td>
+                        <td>${t.bulan}${lunasTag}</td>
                         <td>${t.keterangan}</td>
                         <td><span class="platform-badge ${platformClass}">${t.platform}</span></td>
                         <td>${t.pemilik}</td>
                         <td>${t.cicilan}</td>
                         <td><strong>${formatRupiah(parseInt(t.biaya))}</strong></td>
-                        <td><button class="delete-btn" onclick="deleteTransaksi('${t.id}')">🗑️ Hapus</button></td>
+                        <td>
+                            <button class="edit-btn" onclick="editTransaksi('${t.id}')">✏️ Edit</button>
+                            <button class="delete-btn" onclick="deleteTransaksi('${t.id}')">🗑️</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -816,6 +1023,195 @@
             }
         }
 
+        async function editTransaksi(id) {
+            try {
+                const doc = await db.collection('hutang').doc(id).get();
+                const data = doc.data();
+                
+                document.getElementById('editId').value = id;
+                document.getElementById('editBulan').value = data.bulan;
+                document.getElementById('editTanggal').value = data.tanggal;
+                document.getElementById('editKeterangan').value = data.keterangan;
+                document.getElementById('editPemilik').value = data.pemilik;
+                document.getElementById('editBiaya').value = data.biaya;
+                document.getElementById('editCicilan').value = data.cicilan;
+                document.getElementById('editPlatform').value = data.platform;
+                
+                document.getElementById('editModal').classList.add('show');
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const updatedData = {
+                bulan: document.getElementById('editBulan').value,
+                tanggal: document.getElementById('editTanggal').value,
+                keterangan: document.getElementById('editKeterangan').value,
+                pemilik: document.getElementById('editPemilik').value,
+                biaya: document.getElementById('editBiaya').value,
+                cicilan: document.getElementById('editCicilan').value,
+                platform: document.getElementById('editPlatform').value
+            };
+
+            try {
+                await db.collection('hutang').doc(id).update(updatedData);
+                showAlert('✅ Transaksi berhasil diupdate!', 'success');
+                closeEditModal();
+                loadData();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Gagal mengupdate transaksi: ' + error.message, 'error');
+            }
+        });
+
+        function parseCicilan(cicilanStr) {
+            if (cicilanStr === '1x') return null;
+            const match = cicilanStr.match(/(\d+)\/(\d+)/);
+            if (match) {
+                return {
+                    current: parseInt(match[1]),
+                    total: parseInt(match[2])
+                };
+            }
+            return null;
+        }
+
+        function getNextMonth(bulan) {
+            const bulanList = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            const index = bulanList.indexOf(bulan);
+            return index < 11 ? bulanList[index + 1] : bulanList[0];
+        }
+
+        async function createCicilanOtomatis(baseData, cicilanInfo) {
+            const batch = db.batch();
+            let currentBulan = baseData.bulan;
+            
+            for (let i = cicilanInfo.current + 1; i <= cicilanInfo.total; i++) {
+                currentBulan = getNextMonth(currentBulan);
+                
+                const newDocRef = db.collection('hutang').doc();
+                batch.set(newDocRef, {
+                    ...baseData,
+                    bulan: currentBulan,
+                    cicilan: `${i}/${cicilanInfo.total}`,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            await batch.commit();
+        }
+
+        async function checkStatusLunas() {
+            const bulan = document.getElementById('checkBulan').value;
+            const infoDiv = document.getElementById('statusLunasInfo');
+            const lunasBtn = document.getElementById('lunasBtn');
+            
+            try {
+                const snapshot = await db.collection('hutang')
+                    .where('bulan', '==', bulan)
+                    .get();
+                
+                if (snapshot.empty) {
+                    infoDiv.innerHTML = `<p style="margin: 0; color: #999;">💭 Tidak ada transaksi di bulan ${bulan}</p>`;
+                    lunasBtn.style.display = 'none';
+                    return;
+                }
+                
+                let totalTransaksi = 0;
+                let totalLunas = 0;
+                let totalBelumLunas = 0;
+                let totalNominal = 0;
+                let nominalBelumLunas = 0;
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const biaya = parseInt(data.biaya) || 0;
+                    totalTransaksi++;
+                    totalNominal += biaya;
+                    
+                    if (data.lunas === true) {
+                        totalLunas++;
+                    } else {
+                        totalBelumLunas++;
+                        nominalBelumLunas += biaya;
+                    }
+                });
+                
+                if (totalBelumLunas === 0) {
+                    infoDiv.innerHTML = `
+                        <p style="margin: 0; color: #27ae60; font-weight: bold;">
+                            ✅ Bulan ${bulan} sudah LUNAS!<br>
+                            <span style="font-weight: normal; font-size: 13px;">
+                                ${totalTransaksi} transaksi - Total: ${formatRupiah(totalNominal)}
+                            </span>
+                        </p>
+                    `;
+                    lunasBtn.style.display = 'none';
+                } else {
+                    infoDiv.innerHTML = `
+                        <p style="margin: 0; color: #e74c3c; font-weight: bold;">
+                            ⚠️ Bulan ${bulan} belum lunas<br>
+                            <span style="font-weight: normal; font-size: 13px;">
+                                ${totalBelumLunas} transaksi belum lunas dari ${totalTransaksi} total transaksi<br>
+                                Sisa hutang: ${formatRupiah(nominalBelumLunas)}
+                            </span>
+                        </p>
+                    `;
+                    lunasBtn.style.display = 'inline-flex';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                infoDiv.innerHTML = `<p style="margin: 0; color: #e74c3c;">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function markAsLunas() {
+            const bulan = document.getElementById('checkBulan').value;
+            
+            const confirmMsg = `Apakah Anda yakin ingin menandai SEMUA transaksi di bulan ${bulan} sebagai LUNAS?\n\nTransaksi akan tetap ada di riwayat tapi tidak dihitung dalam total hutang.`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('hutang')
+                    .where('bulan', '==', bulan)
+                    .where('lunas', '!=', true)
+                    .get();
+                
+                if (snapshot.empty) {
+                    showAlert('💭 Tidak ada transaksi yang perlu ditandai lunas', 'error');
+                    return;
+                }
+                
+                const batch = db.batch();
+                snapshot.forEach((doc) => {
+                    batch.update(doc.ref, { lunas: true });
+                });
+                
+                await batch.commit();
+                
+                showAlert(`✅ Semua transaksi di bulan ${bulan} berhasil ditandai lunas!`, 'success');
+                loadData();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Gagal menandai lunas: ' + error.message, 'error');
+            }
+        }
+
         function updateDashboard(data) {
             document.getElementById('totalHutang').textContent = formatRupiah(data.totalHutang);
             document.getElementById('bulanIni').textContent = formatRupiah(data.bulanIni);
@@ -843,19 +1239,32 @@
                 biaya: document.getElementById('biaya').value,
                 cicilan: document.getElementById('cicilan').value,
                 platform: document.getElementById('platform').value,
+                lunas: false,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             setLoading(true);
 
             try {
+                // Simpan transaksi pertama
                 await db.collection('hutang').add(formData);
 
-                showAlert('✅ Data berhasil disimpan ke Firebase!', 'success');
+                // Cek apakah perlu buat cicilan otomatis
+                const autoCicilan = document.getElementById('autoCicilan').checked;
+                const cicilanInfo = parseCicilan(formData.cicilan);
+                
+                if (autoCicilan && cicilanInfo && cicilanInfo.current < cicilanInfo.total) {
+                    await createCicilanOtomatis(formData, cicilanInfo);
+                    showAlert(`✅ Data berhasil disimpan! Cicilan ${cicilanInfo.current}/${cicilanInfo.total} sampai ${cicilanInfo.total}/${cicilanInfo.total} dibuat otomatis.`, 'success');
+                } else {
+                    showAlert('✅ Data berhasil disimpan ke Firebase!', 'success');
+                }
+
                 form.reset();
                 document.getElementById('tanggal').valueAsDate = new Date();
                 const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long' });
                 document.getElementById('bulan').value = bulanSekarang.charAt(0).toUpperCase() + bulanSekarang.slice(1);
+                document.getElementById('autoCicilan').checked = true;
                 
                 loadData();
 
