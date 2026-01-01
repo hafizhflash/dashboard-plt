@@ -938,7 +938,13 @@
                     });
                 });
 
-                displayTransaksi(allTransaksi);
+                // Set filter ke bulan sekarang
+                const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long' });
+                const bulanCapital = bulanSekarang.charAt(0).toUpperCase() + bulanSekarang.slice(1);
+                document.getElementById('filterBulan').value = bulanCapital;
+                
+                // Langsung filter bulan ini
+                filterTransaksi();
             } catch (error) {
                 console.error('Error loading riwayat:', error);
             }
