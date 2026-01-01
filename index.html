@@ -250,6 +250,117 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .history-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .history-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .transaction-table table {
+            width: 100%;
+        }
+
+        .transaction-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .transaction-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .transaction-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-spaylater {
+            background: #ffe8e8;
+            color: #d63031;
+        }
+
+        .badge-gopay {
+            background: #e8f8f5;
+            color: #00b894;
+        }
+
+        .badge-dana {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .transaction-table {
+                font-size: 12px;
+            }
+            
+            .transaction-table th,
+            .transaction-table td {
+                padding: 8px 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -439,6 +550,71 @@
                 </div>
             </div>
         </div>
+
+        <!-- Section Riwayat Transaksi -->
+        <div class="history-section">
+            <h2 class="section-title">📋 Riwayat Transaksi</h2>
+            
+            <div class="history-filter">
+                <select id="filterBulan" class="filter-select" onchange="filterTransaksi()">
+                    <option value="">Semua Bulan</option>
+                    <option value="Januari">Januari</option>
+                    <option value="Februari">Februari</option>
+                    <option value="Maret">Maret</option>
+                    <option value="April">April</option>
+                    <option value="Mei">Mei</option>
+                    <option value="Juni">Juni</option>
+                    <option value="Juli">Juli</option>
+                    <option value="Agustus">Agustus</option>
+                    <option value="September">September</option>
+                    <option value="Oktober">Oktober</option>
+                    <option value="November">November</option>
+                    <option value="Desember">Desember</option>
+                </select>
+
+                <select id="filterPlatform" class="filter-select" onchange="filterTransaksi()">
+                    <option value="">Semua Platform</option>
+                    <option value="Spaylater">Spaylater</option>
+                    <option value="Gopay Later">Gopay Later</option>
+                    <option value="Dana Cicil">Dana Cicil</option>
+                </select>
+
+                <select id="filterPemilik" class="filter-select" onchange="filterTransaksi()">
+                    <option value="">Semua Pemilik</option>
+                    <option value="Saya">Saya</option>
+                    <option value="Mama">Mama</option>
+                    <option value="Kak Iya">Kak Iya</option>
+                    <option value="Kiki">Kiki</option>
+                </select>
+            </div>
+
+            <div class="transaction-table">
+                <table id="transaksiTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Bulan</th>
+                            <th>Keterangan</th>
+                            <th>Platform</th>
+                            <th>Pemilik</th>
+                            <th>Cicilan</th>
+                            <th>Biaya</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaksiBody">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📭</div>
+                                    <p>Belum ada transaksi</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -539,9 +715,104 @@
                 });
 
                 updateDashboard(data);
+                loadRiwayat();
             } catch (error) {
                 console.error('Error loading data:', error);
                 showAlert('❌ Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+
+        let allTransaksi = [];
+
+        async function loadRiwayat() {
+            try {
+                const snapshot = await db.collection('hutang').orderBy('tanggal', 'desc').get();
+                
+                allTransaksi = [];
+                snapshot.forEach((doc) => {
+                    allTransaksi.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                displayTransaksi(allTransaksi);
+            } catch (error) {
+                console.error('Error loading riwayat:', error);
+            }
+        }
+
+        function displayTransaksi(transaksiList) {
+            const tbody = document.getElementById('transaksiBody');
+            
+            if (transaksiList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <p>Tidak ada transaksi</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = transaksiList.map(t => {
+                const platformClass = 
+                    t.platform === 'Spaylater' ? 'badge-spaylater' :
+                    t.platform === 'Gopay Later' ? 'badge-gopay' : 'badge-dana';
+
+                return `
+                    <tr>
+                        <td>${t.tanggal}</td>
+                        <td>${t.bulan}</td>
+                        <td>${t.keterangan}</td>
+                        <td><span class="platform-badge ${platformClass}">${t.platform}</span></td>
+                        <td>${t.pemilik}</td>
+                        <td>${t.cicilan}</td>
+                        <td><strong>${formatRupiah(parseInt(t.biaya))}</strong></td>
+                        <td><button class="delete-btn" onclick="deleteTransaksi('${t.id}')">🗑️ Hapus</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTransaksi() {
+            const bulanFilter = document.getElementById('filterBulan').value;
+            const platformFilter = document.getElementById('filterPlatform').value;
+            const pemilikFilter = document.getElementById('filterPemilik').value;
+
+            let filtered = allTransaksi;
+
+            if (bulanFilter) {
+                filtered = filtered.filter(t => t.bulan === bulanFilter);
+            }
+
+            if (platformFilter) {
+                filtered = filtered.filter(t => t.platform === platformFilter);
+            }
+
+            if (pemilikFilter) {
+                filtered = filtered.filter(t => t.pemilik === pemilikFilter);
+            }
+
+            displayTransaksi(filtered);
+        }
+
+        async function deleteTransaksi(id) {
+            if (!confirm('Yakin ingin menghapus transaksi ini?')) {
+                return;
+            }
+
+            try {
+                await db.collection('hutang').doc(id).delete();
+                showAlert('✅ Transaksi berhasil dihapus!', 'success');
+                loadData();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Gagal menghapus transaksi: ' + error.message, 'error');
             }
         }
 
