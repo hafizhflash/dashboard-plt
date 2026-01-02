@@ -888,9 +888,9 @@
                     const hutang = doc.data();
                     const biaya = parseInt(hutang.biaya) || 0;
                     const isLunas = hutang.lunas === true;
-                    const isOriginal = hutang.isOriginal !== false; // Default true untuk data lama
+                    const isOriginal = hutang.isOriginal === true; // Hanya hitung yang BENAR-BENAR original
                     
-                    // Hitung total transaksi - hanya yang original
+                    // Hitung total transaksi - hanya yang original (exclude undefined/old data)
                     if (isOriginal) {
                         data.totalTransaksi++;
                     }
@@ -1195,10 +1195,46 @@
             }
         }
 
+        async function markPlatformAsLunas(bulan, platform) {
+            const confirmMsg = `Apakah Anda yakin ingin melunasi semua tagihan ${platform} di bulan ${bulan}?\n\nTagihan akan tetap ada di riwayat tapi tidak dihitung dalam total hutang.`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('hutang')
+                    .where('bulan', '==', bulan)
+                    .where('platform', '==', platform)
+                    .where('lunas', '!=', true)
+                    .get();
+                
+                if (snapshot.empty) {
+                    showAlert(`💭 Tidak ada transaksi ${platform} yang perlu ditandai lunas`, 'error');
+                    return;
+                }
+                
+                const batch = db.batch();
+                let count = 0;
+                snapshot.forEach((doc) => {
+                    batch.update(doc.ref, { lunas: true });
+                    count++;
+                });
+                
+                await batch.commit();
+                showAlert(`✅ ${count} transaksi ${platform} berhasil ditandai lunas!`, 'success');
+                loadData();
+                checkStatusLunas();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Gagal menandai lunas: ' + error.message, 'error');
+            }
+        }
+
         async function markAsLunas() {
             const bulan = document.getElementById('checkBulan').value;
             
-            const confirmMsg = `Apakah Anda yakin ingin menandai SEMUA transaksi di bulan ${bulan} sebagai LUNAS?\n\nTransaksi akan tetap ada di riwayat tapi tidak dihitung dalam total hutang.`;
+            const confirmMsg = `Apakah Anda yakin ingin melunasi SEMUA PLATFORM di bulan ${bulan}?\n\nSemua tagihan akan tetap ada di riwayat tapi tidak dihitung dalam total hutang.`;
             
             if (!confirm(confirmMsg)) {
                 return;
@@ -1216,14 +1252,17 @@
                 }
                 
                 const batch = db.batch();
+                let count = 0;
                 snapshot.forEach((doc) => {
                     batch.update(doc.ref, { lunas: true });
+                    count++;
                 });
                 
                 await batch.commit();
                 
-                showAlert(`✅ Semua transaksi di bulan ${bulan} berhasil ditandai lunas!`, 'success');
+                showAlert(`✅ ${count} transaksi di bulan ${bulan} berhasil ditandai lunas!`, 'success');
                 loadData();
+                checkStatusLunas();
             } catch (error) {
                 console.error('Error:', error);
                 showAlert('❌ Gagal menandai lunas: ' + error.message, 'error');
