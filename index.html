@@ -888,9 +888,9 @@
                     const hutang = doc.data();
                     const biaya = parseInt(hutang.biaya) || 0;
                     const isLunas = hutang.lunas === true;
-                    const isOriginal = hutang.isOriginal === true; // Hanya hitung yang BENAR-BENAR original
+                    const isOriginal = hutang.isOriginal !== false; // Hitung semua KECUALI auto-generated
                     
-                    // Hitung total transaksi - hanya yang original (exclude undefined/old data)
+                    // Hitung total transaksi - exclude yang auto-generated (isOriginal: false)
                     if (isOriginal) {
                         data.totalTransaksi++;
                     }
@@ -1147,47 +1147,91 @@
                     return;
                 }
                 
-                let totalTransaksi = 0;
-                let totalLunas = 0;
                 let totalBelumLunas = 0;
-                let totalNominal = 0;
                 let nominalBelumLunas = 0;
+                
+                // Breakdown per platform
+                const platformData = {
+                    'Spaylater': { belumLunas: 0, sudahLunas: 0, nominalBelum: 0, nominalLunas: 0 },
+                    'Gopay Later': { belumLunas: 0, sudahLunas: 0, nominalBelum: 0, nominalLunas: 0 },
+                    'Dana Cicil': { belumLunas: 0, sudahLunas: 0, nominalBelum: 0, nominalLunas: 0 }
+                };
                 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const biaya = parseInt(data.biaya) || 0;
-                    totalTransaksi++;
-                    totalNominal += biaya;
+                    const platform = data.platform;
                     
-                    if (data.lunas === true) {
-                        totalLunas++;
-                    } else {
-                        totalBelumLunas++;
-                        nominalBelumLunas += biaya;
+                    if (platformData[platform]) {
+                        if (data.lunas === true) {
+                            platformData[platform].sudahLunas++;
+                            platformData[platform].nominalLunas += biaya;
+                        } else {
+                            platformData[platform].belumLunas++;
+                            platformData[platform].nominalBelum += biaya;
+                            totalBelumLunas++;
+                            nominalBelumLunas += biaya;
+                        }
                     }
                 });
                 
                 if (totalBelumLunas === 0) {
                     infoDiv.innerHTML = `
                         <p style="margin: 0; color: #27ae60; font-weight: bold;">
-                            ✅ Bulan ${bulan} sudah LUNAS!<br>
-                            <span style="font-weight: normal; font-size: 13px;">
-                                ${totalTransaksi} transaksi - Total: ${formatRupiah(totalNominal)}
-                            </span>
+                            ✅ Bulan ${bulan} sudah LUNAS!
                         </p>
                     `;
                     lunasBtn.style.display = 'none';
                 } else {
-                    infoDiv.innerHTML = `
-                        <p style="margin: 0; color: #e74c3c; font-weight: bold;">
-                            ⚠️ Bulan ${bulan} belum lunas<br>
-                            <span style="font-weight: normal; font-size: 13px;">
-                                ${totalBelumLunas} transaksi belum lunas dari ${totalTransaksi} total transaksi<br>
-                                Sisa hutang: ${formatRupiah(nominalBelumLunas)}
-                            </span>
-                        </p>
+                    let breakdownHTML = `
+                        <div style="margin-bottom: 10px;">
+                            <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">
+                                📊 Rincian Tagihan Bulan ${bulan}
+                            </p>
                     `;
+                    
+                    // Loop setiap platform
+                    for (const [platform, stats] of Object.entries(platformData)) {
+                        if (stats.belumLunas > 0 || stats.sudahLunas > 0) {
+                            const icon = platform === 'Spaylater' ? '🔴' : platform === 'Gopay Later' ? '🟢' : '💙';
+                            const statusColor = stats.belumLunas > 0 ? '#e74c3c' : '#27ae60';
+                            const statusIcon = stats.belumLunas > 0 ? '⚠️' : '✅';
+                            
+                            breakdownHTML += `
+                                <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px;">
+                                    <div style="font-weight: 600; color: ${statusColor}; margin-bottom: 5px;">
+                                        ${icon} ${platform} ${statusIcon}
+                                    </div>
+                                    <div style="font-size: 13px; color: #666;">
+                                        ${stats.belumLunas > 0 ? `
+                                            • Belum lunas: ${stats.belumLunas} transaksi - ${formatRupiah(stats.nominalBelum)}
+                                        ` : ''}
+                                        ${stats.sudahLunas > 0 ? `
+                                            <br>• Sudah lunas: ${stats.sudahLunas} transaksi - ${formatRupiah(stats.nominalLunas)}
+                                        ` : ''}
+                                    </div>
+                                    ${stats.belumLunas > 0 ? `
+                                        <button onclick="markPlatformAsLunas('${bulan}', '${platform}')" 
+                                                style="margin-top: 8px; padding: 6px 12px; background: #27ae60; color: white; 
+                                                       border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                            ✅ Lunasi ${platform}
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    breakdownHTML += `
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e0e0e0; font-weight: bold; color: #333;">
+                                Total Belum Lunas: ${formatRupiah(nominalBelumLunas)}
+                            </div>
+                        </div>
+                    `;
+                    
+                    infoDiv.innerHTML = breakdownHTML;
                     lunasBtn.style.display = 'inline-flex';
+                    lunasBtn.textContent = '✅ Lunasi Semua Platform';
                 }
             } catch (error) {
                 console.error('Error:', error);
