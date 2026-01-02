@@ -881,13 +881,19 @@
                 // Set bulan di status lunas dropdown
                 document.getElementById('checkBulan').value = bulanCapital;
 
+                // Set untuk tracking cicilan unik
+                const cicilanGroups = new Set();
+
                 snapshot.forEach((doc) => {
                     const hutang = doc.data();
                     const biaya = parseInt(hutang.biaya) || 0;
                     const isLunas = hutang.lunas === true;
+                    const isOriginal = hutang.isOriginal !== false; // Default true untuk data lama
                     
-                    // Hitung total transaksi (semua termasuk yang lunas)
-                    data.totalTransaksi++;
+                    // Hitung total transaksi - hanya yang original
+                    if (isOriginal) {
+                        data.totalTransaksi++;
+                    }
                     
                     // Hitung hanya yang belum lunas untuk total hutang
                     if (!isLunas) {
@@ -909,11 +915,16 @@
                         }
                     }
                     
-                    // Cicilan aktif - hanya yang belum lunas
+                    // Cicilan aktif - hitung sebagai grup unik
                     if (hutang.cicilan && hutang.cicilan !== '1x' && !isLunas) {
-                        data.cicilanAktif++;
+                        // Buat ID unik untuk grup cicilan berdasarkan data yang sama
+                        const groupId = `${hutang.keterangan}-${hutang.platform}-${hutang.pemilik}-${hutang.biaya}`;
+                        cicilanGroups.add(groupId);
                     }
                 });
+
+                // Set jumlah cicilan aktif berdasarkan grup unik
+                data.cicilanAktif = cicilanGroups.size;
 
                 updateDashboard(data);
                 loadRiwayat();
@@ -1112,6 +1123,7 @@
                     ...baseData,
                     bulan: currentBulan,
                     cicilan: `${i}/${cicilanInfo.total}`,
+                    isOriginal: false, // Cicilan auto-generate
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
@@ -1246,6 +1258,7 @@
                 cicilan: document.getElementById('cicilan').value,
                 platform: document.getElementById('platform').value,
                 lunas: false,
+                isOriginal: true, // Transaksi asli dari user
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
