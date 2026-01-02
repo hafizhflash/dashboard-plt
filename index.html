@@ -888,12 +888,9 @@
                     const hutang = doc.data();
                     const biaya = parseInt(hutang.biaya) || 0;
                     const isLunas = hutang.lunas === true;
-                    const isOriginal = hutang.isOriginal !== false; // Hitung semua KECUALI auto-generated
                     
-                    // Hitung total transaksi - exclude yang auto-generated (isOriginal: false)
-                    if (isOriginal) {
-                        data.totalTransaksi++;
-                    }
+                    // Hitung total transaksi - hitung SEMUA transaksi
+                    data.totalTransaksi++;
                     
                     // Hitung hanya yang belum lunas untuk total hutang
                     if (!isLunas) {
